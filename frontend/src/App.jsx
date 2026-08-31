@@ -2,7 +2,7 @@ import React, { useEffect } from 'react';
 import CommandCenter from './views/CommandCenter';
 import AdminDashboard from './views/AdminDashboard';
 import SettingsView from './views/SettingsView';
-import Navbar from 'components/Navbar';
+import Navbar from './components/Navbar';
 import { useAppStore } from './store/useAppStore';
 
 export default function App() {
