@@ -1,21 +1,25 @@
 import React, { useState } from 'react';
 import AdaptiveReader from '../components/AdaptiveReader';
-import SourceUploadModal from '../components/SourceUploadModal'; // ✅ Added missing import
+import SourceUploadModal from '../components/SourceUploadModal';
+import { useSourceStore } from '../store/useSourceStore';
 import { 
   BookOpen, PlayCircle, Headphones, Sparkles, FileText, 
-  Plus, CheckCircle2, GitFork, ArrowUpRight, Volume2, Search, Video, HardDrive
+  Plus, CheckCircle2, GitFork, ArrowUpRight, Volume2, Search, Video, HardDrive, Layers
 } from 'lucide-react';
 
 export default function CommandCenter() {
   const [activeTab, setActiveTab] = useState('reader');
-  const [isModalOpen, setIsModalOpen] = useState(false); // ✅ Fixed typo: useState instead of userState
+  const [isModalOpen, setIsModalOpen] = useState(false);
+
+  // Zustand Store binding
+  const { sources, activeSource, setActiveSource } = useSourceStore();
 
   return (
     <div className="flex h-[calc(100vh-4rem)] bg-zinc-950 text-zinc-100 overflow-hidden font-sans">
       
       {/* 1. LEFT SIDEBAR: Source Tree & Modules */}
       <aside className="w-80 border-r border-zinc-800/80 bg-zinc-950/50 flex flex-col justify-between p-4 hidden md:flex">
-        <div className="flex flex-col gap-4">
+        <div className="flex flex-col gap-4 overflow-y-auto">
           
           {/* Add Source CTA */}
           <button 
@@ -28,26 +32,49 @@ export default function CommandCenter() {
 
           {/* Active Course Sources Tree */}
           <div className="flex flex-col gap-2">
-            <span className="text-[11px] font-bold tracking-wider text-zinc-500 uppercase px-1">
-              Active Module Sources
-            </span>
+            <div className="flex items-center justify-between px-1">
+              <span className="text-[11px] font-bold tracking-wider text-zinc-500 uppercase">
+                Ingested Sources
+              </span>
+              <span className="text-[10px] font-mono bg-zinc-800 text-zinc-400 px-1.5 py-0.5 rounded">
+                {sources.length}
+              </span>
+            </div>
+
             <div className="flex flex-col gap-1 text-xs">
-              <div className="p-2.5 rounded-lg bg-zinc-900 border border-zinc-800/80 flex items-center gap-2 text-zinc-200">
-                <FileText className="w-4 h-4 text-emerald-400 shrink-0" />
-                <span className="truncate">CS101_Dynamic_Prog.pdf</span>
-              </div>
-              <div className="p-2.5 rounded-lg hover:bg-zinc-900/50 text-zinc-400 flex items-center gap-2 transition cursor-pointer">
-                <Video className="w-4 h-4 text-red-400 shrink-0" />
-                <span className="truncate">MIT L12: DP Memoization</span>
-              </div>
-              <div className="p-2.5 rounded-lg hover:bg-zinc-900/50 text-zinc-400 flex items-center gap-2 transition cursor-pointer">
-                <HardDrive className="w-4 h-4 text-blue-400 shrink-0" />
-                <span className="truncate">My_Lecture_Notes.md</span>
-              </div>
+              {sources.length === 0 ? (
+                <div className="p-3 text-center border border-dashed border-zinc-800 rounded-xl text-zinc-500 text-[11px]">
+                  No sources added yet. Click above to ingest a PDF or YouTube video.
+                </div>
+              ) : (
+                sources.map((src) => {
+                  const isSelected = activeSource?.id === src.id;
+                  return (
+                    <div
+                      key={src.id}
+                      onClick={() => setActiveSource(src)}
+                      className={`p-2.5 rounded-lg border flex items-center gap-2 cursor-pointer transition ${
+                        isSelected
+                          ? 'bg-zinc-900 border-emerald-500/50 text-emerald-400 font-medium'
+                          : 'hover:bg-zinc-900/50 text-zinc-400 border-transparent hover:text-zinc-200'
+                      }`}
+                    >
+                      {src.source_type === 'youtube' ? (
+                        <Video className="w-4 h-4 text-red-400 shrink-0" />
+                      ) : src.source_type === 'file' ? (
+                        <FileText className="w-4 h-4 text-emerald-400 shrink-0" />
+                      ) : (
+                        <HardDrive className="w-4 h-4 text-blue-400 shrink-0" />
+                      )}
+                      <span className="truncate">{src.title}</span>
+                    </div>
+                  );
+                })
+              )}
             </div>
           </div>
 
-          {/* Social Forked Workings Section */}
+          {/* Peer Clones / Social Section */}
           <div className="flex flex-col gap-2 pt-3 border-t border-zinc-900">
             <span className="text-[11px] font-bold tracking-wider text-zinc-500 uppercase px-1 flex items-center justify-between">
               <span>Peer Clones</span>
@@ -70,7 +97,7 @@ export default function CommandCenter() {
         </div>
 
         {/* Diagnostic Telemetry Heartbeat Widget */}
-        <div className="p-3 rounded-xl bg-zinc-900/80 border border-zinc-800 text-xs flex items-center justify-between">
+        <div className="p-3 rounded-xl bg-zinc-900/80 border border-zinc-800 text-xs flex items-center justify-between mt-2">
           <div className="flex items-center gap-2">
             <div className="h-2 w-2 rounded-full bg-emerald-500 animate-pulse" />
             <span className="text-zinc-300 font-medium">Retention Decay</span>
@@ -110,8 +137,12 @@ export default function CommandCenter() {
           <div className="p-6 max-w-3xl w-full mx-auto flex flex-col gap-6">
             <div className="flex items-center justify-between pb-4 border-b border-zinc-900">
               <div>
-                <h1 className="text-xl font-bold tracking-tight text-zinc-100">CS101: Dynamic Programming</h1>
-                <p className="text-xs text-zinc-400 mt-1">Ingested via Course_Syllabus_2026.pdf</p>
+                <h1 className="text-xl font-bold tracking-tight text-zinc-100">
+                  {activeSource ? activeSource.title : 'CS101: Dynamic Programming'}
+                </h1>
+                <p className="text-xs text-zinc-400 mt-1">
+                  {activeSource ? `Type: ${activeSource.source_type}` : 'Ingested via Course_Syllabus_2026.pdf'}
+                </p>
               </div>
               <span className="px-3 py-1 rounded-full text-xs font-mono bg-emerald-500/10 text-emerald-400 border border-emerald-500/20">
                 NLP Indexed
@@ -207,11 +238,10 @@ export default function CommandCenter() {
         </div>
       </aside>
 
-      {/* Upload Modal */}
+      {/* Ingestion Upload Modal */}
       <SourceUploadModal 
         isOpen={isModalOpen} 
         onClose={() => setIsModalOpen(false)} 
-        onUploadSuccess={(newSource) => console.log('New source added:', newSource)}
       />
 
     </div>
